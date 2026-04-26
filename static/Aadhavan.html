@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Aadhavan · Premium Indian Event Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Jost:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="icons.jsx?v=2"></script>
+<script type="text/babel" src="shared.jsx?v=2"></script>
+<script type="text/babel" src="home.jsx?v=3"></script>
+<script type="text/babel" src="gallery.jsx?v=2"></script>
+<script type="text/babel" src="book.jsx?v=2"></script>
+<script type="text/babel" src="about_contact.jsx?v=2"></script>
+
+<script type="text/babel">
+const VALID_PAGES = ['home','gallery','book','about','contact'];
+
+function App() {
+  const [page, setPage] = React.useState(() => {
+    const hash = window.location.hash.slice(1);
+    return VALID_PAGES.includes(hash) ? hash : (localStorage.getItem('aadhavan-page') || 'home');
+  });
+
+  const go = (p) => {
+    setPage(p);
+    localStorage.setItem('aadhavan-page', p);
+    window.history.pushState({ page: p }, '', '#' + p);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  React.useEffect(() => {
+    // Sync initial hash
+    window.history.replaceState({ page: page }, '', '#' + page);
+    // Handle browser back/forward and Android hardware back button
+    const onPop = (e) => {
+      const p = (e.state && VALID_PAGES.includes(e.state.page)) ? e.state.page : 'home';
+      setPage(p);
+      localStorage.setItem('aadhavan-page', p);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  return (
+    <>
+      <Navbar page={page} go={go}/>
+      <main key={page} data-screen-label={page} style={{ animation: 'fadeIn 0.4s ease-out' }}>
+        {page === 'home' && <Home go={go}/>}
+        {page === 'gallery' && <Gallery go={go}/>}
+        {page === 'book' && <BookNow/>}
+        {page === 'about' && <About/>}
+        {page === 'contact' && <Contact/>}
+      </main>
+      <Footer go={go}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

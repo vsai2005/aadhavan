@@ -1,0 +1,28 @@
+# Secrets — NEVER commit
+.env
+.env.local
+.env.production
+
+# Runtime state (lives on Railway volume in prod, not in Git)
+data/
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ngrok config:*)",
+      "Bash(winget install:*)",
+      "Bash(winget list:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(where ngrok:*)",
+      "Bash(powershell -Command \"Invoke-WebRequest -Uri 'https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip' -OutFile 'C:\\\\\\\\Users\\\\\\\\Lohith kumar\\\\\\\\ngrok.zip'; Expand-Archive -Path 'C:\\\\\\\\Users\\\\\\\\Lohith kumar\\\\\\\\ngrok.zip' -DestinationPath 'C:\\\\\\\\Users\\\\\\\\Lohith kumar\\\\\\\\ngrok' -Force; echo 'Done'\" 2>&1)",
+      "Bash(\"C:/Users/Lohith kumar/ngrok/ngrok.exe\" config add-authtoken 3Co98B5QTKWQVFY9RTiRQAxygq0_3hnQoWKXviL1XxojJqAx2 2>&1)",
+      "Bash(powershell -Command \"Stop-Process -Name ngrok -Force -ErrorAction SilentlyContinue; echo 'killed'\" 2>&1)",
+      "Bash(powershell -Command \"Get-Process ngrok -ErrorAction SilentlyContinue | Select-Object Id,Name,StartTime\")",
+      "Bash(curl -s http://localhost:4040/api/tunnels)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[''''tunnels''''][0][''''public_url'''']\\)\")",
+      "Bash(curl:*)",
+      "Bash(python -c \":*)",
+      "Bash(powershell -Command \"Stop-Process -Name python -Force -ErrorAction SilentlyContinue; Stop-Process -Name ngrok -Force -ErrorAction SilentlyContinue; echo 'Done'\")"
+    ]
+  }
+}
