@@ -64,8 +64,12 @@ if _is_prod and not _secret:
     )
 app.config["SECRET_KEY"] = _secret or secrets.token_hex(32)
 
+_db_url = os.getenv("DATABASE_URL")
+if _db_url and _db_url.startswith("postgres://"):
+    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    os.getenv("DATABASE_URL") or f"sqlite:///{DATA_DIR / 'aadhavan.db'}"
+    _db_url or f"sqlite:///{DATA_DIR / 'aadhavan.db'}"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024  # 12 MB upload cap
