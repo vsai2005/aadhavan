@@ -503,3 +503,37 @@ table.admin-table tr:hover td { background: rgba(246, 238, 248, 0.5); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-calendar-layout { grid-template-columns: 1fr; }
 }
+
+
+/* ─── Mobile responsiveness ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  .admin-shell { grid-template-columns: 1fr; }
+  .admin-sidebar {
+    position: sticky; top: 0; height: auto;
+    flex-direction: row; overflow-x: auto;
+    padding: 12px; gap: 6px; z-index: 100;
+  }
+  .admin-sidebar .brand { display: none; }
+  .nav-item { white-space: nowrap; padding: 10px 14px; font-size: 13px; }
+  .admin-main { padding: 16px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; }
+  .admin-calendar-layout { grid-template-columns: 1fr; }
+
+  .admin-table-wrap, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 560px; font-size: 13px; }
+
+  .drawer { width: 100vw; padding: 20px; }
+
+  .login-shell { padding: 16px; }
+  .login-card { width: 100%; max-width: 420px; padding: 24px; }
+  .login-card .brand .mark { font-size: 22px; }
+
+  .form-row { grid-template-columns: 1fr; }
+  .admin-btn { width: 100%; }
+  .admin-toolbar { flex-wrap: wrap; gap: 8px; }
+}
+
+@media (max-width: 380px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}
