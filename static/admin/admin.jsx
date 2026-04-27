@@ -117,7 +117,6 @@ function Login({ onLogin }) {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
           {error && <div className="error">{error}</div>}
-          <div className="hint">Default: owner@aadhavan.com / aadhavan2025</div>
         </form>
       </div>
     </div>
