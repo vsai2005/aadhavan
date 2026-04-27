@@ -1,4 +1,4 @@
-// admin.jsx — Aadhavan admin panel (single-file React SPA via CDN)
+undefined// admin.jsx — Aadhavan admin panel (single-file React SPA via CDN)
 
 const { useState, useEffect, useCallback } = React;
 
@@ -190,7 +190,7 @@ function Dashboard({ onNavigate }) {
             </thead>
             <tbody>
               {recent.map(r => (
-                <tr key={r.id}>
+                <tr key={r.id} onClick={() => onNavigate('inquiries')} style={{ cursor: 'pointer' }}>
                   <td>{r.fullName}<div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.phone}</div></td>
                   <td>{r.serviceType || r.eventType}</td>
                   <td>{r.eventDate}</td>
