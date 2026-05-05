@@ -54,7 +54,6 @@ function HeroMandala() {
 
 function Hero({ go }) {
   React.useEffect(() => {
-    // Disable parallax on touch devices — causes jank on iOS/Android
     if (window.matchMedia('(hover: none)').matches) return;
     const onScroll = () => {
       const y = window.scrollY;
@@ -85,32 +84,6 @@ function Hero({ go }) {
   );
 }
 
-function EventCounters() { return null; }
-
-// ---------- Shared feedback storage ----------
-const FEEDBACK_KEY = 'aadhavan-feedback';
-const FEEDBACK_EVENT = 'aadhavan-feedback-updated';
-
-function readFeedback() {
-  try {
-    const raw = localStorage.getItem(FEEDBACK_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (err) {
-    return [];
-  }
-}
-
-function writeFeedback(list) {
-  try {
-    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(list));
-    window.dispatchEvent(new CustomEvent(FEEDBACK_EVENT));
-  } catch (err) {
-    // localStorage full or blocked — fail quietly
-  }
-}
-
 function formatFeedbackMeta(ts) {
   try {
     const d = new Date(ts);
@@ -124,26 +97,48 @@ function formatFeedbackMeta(ts) {
 function Feedback() {
   const [form, setForm] = React.useState({ name: '', email: '', message: '', rating: 0 });
   const [sent, setSent] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
   const [hover, setHover] = React.useState(0);
-  const submit = (e) => {
+
+  const submit = async (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.message.trim()) return;
-    const entry = {
-      id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-      name: form.name.trim(),
-      email: form.email.trim(),
-      message: form.message.trim(),
-      rating: form.rating || 5,
-      createdAt: Date.now(),
-    };
-    const existing = readFeedback();
-    writeFeedback([entry, ...existing]);
-    setSent(true);
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim() || null,
+          message: form.message.trim(),
+          rating: form.rating || 5,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong. Please try again.');
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
+      setSent(true);
+      // Tell Testimonials to reload
+      window.dispatchEvent(new Event('feedback-submitted'));
+    } catch (err) {
+      setError('Network error. Please try again.');
+      setLoading(false);
+    }
   };
+
   const reset = () => {
     setForm({ name: '', email: '', message: '', rating: 0 });
     setSent(false);
+    setError('');
   };
+
   return (
     <section className="section" id="feedback-section">
       <div className="container" style={{ maxWidth: 720 }}>
@@ -183,7 +178,14 @@ function Feedback() {
                     ))}
                   </div>
                 </div>
-                <button type="submit" className="btn btn-primary submit-full">Submit Feedback</button>
+                {error && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(196,122,122,0.12)', border: '1px solid rgba(196,122,122,0.35)', borderRadius: 4, color: 'var(--error-dusty-rose)', fontSize: 13 }}>
+                    {error}
+                  </div>
+                )}
+                <button type="submit" className="btn btn-primary submit-full" disabled={loading}>
+                  {loading ? <Spinner/> : 'Submit Feedback'}
+                </button>
               </form>
             ) : (
               <div className="thank-you">
@@ -236,8 +238,6 @@ function Services() {
   );
 }
 
-
-
 function LookbookTeaser({ go }) {
   const [photos, setPhotos] = React.useState([]);
 
@@ -278,28 +278,28 @@ function LookbookTeaser({ go }) {
 }
 
 function Testimonials() {
-  const [entries, setEntries] = React.useState(() => readFeedback());
+  const [entries, setEntries] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
   const touchStartX = React.useRef(null);
 
+  const load = () => {
+    fetch('/api/feedback')
+      .then(r => r.ok ? r.json() : { feedback: [] })
+      .then(data => { setEntries(data.feedback || []); setIdx(0); })
+      .catch(() => setEntries([]));
+  };
+
   React.useEffect(() => {
-    const sync = () => {
-      setEntries(readFeedback());
-      setIdx(0);
-    };
-    window.addEventListener(FEEDBACK_EVENT, sync);
-    window.addEventListener('storage', sync); // sync across tabs too
-    return () => {
-      window.removeEventListener(FEEDBACK_EVENT, sync);
-      window.removeEventListener('storage', sync);
-    };
+    load();
+    window.addEventListener('feedback-submitted', load);
+    return () => window.removeEventListener('feedback-submitted', load);
   }, []);
 
   const visible = Math.min(3, entries.length);
   const maxIdx = Math.max(0, entries.length - visible);
 
   React.useEffect(() => {
-    if (entries.length <= visible) return; // nothing to rotate
+    if (entries.length <= visible) return;
     const t = setInterval(() => setIdx(i => (i + 1) % (maxIdx + 1)), 6000);
     return () => clearInterval(t);
   }, [entries.length, visible, maxIdx]);
@@ -320,7 +320,6 @@ function Testimonials() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // --- Empty state ---
   if (entries.length === 0) {
     return (
       <section className="section blush">
@@ -345,7 +344,6 @@ function Testimonials() {
     );
   }
 
-  // --- Populated state ---
   const shown = entries.slice(idx, idx + visible);
   const gridCols = visible === 1 ? 'minmax(0, 560px)' : visible === 2 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
   const justify = visible < 3 ? 'center' : 'stretch';

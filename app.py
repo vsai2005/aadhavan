@@ -37,7 +37,7 @@ from notifications import notify_new_contact_message, notify_new_inquiry
 
 from models import (
     CONTACT_METHODS, EVENT_TYPES, INQUIRY_STATUSES, PHOTO_CATEGORIES,
-    BlockedDate, ContactMessage, Inquiry, Photo, Setting, User, db,
+    BlockedDate, ContactMessage, Feedback, Inquiry, Photo, Setting, User, db,
 )
 
 load_dotenv()
@@ -325,6 +325,40 @@ def api_settings_public():
     return jsonify({r.key: json.loads(r.value) for r in rows})
 
 
+# ─── Feedback routes (public) ────────────────────────────────────────────────
+
+@app.route("/api/feedback", methods=["GET"])
+def api_get_feedback():
+    """Return all approved feedback entries, newest first."""
+    rows = Feedback.query.order_by(Feedback.created_at.desc()).all()
+    return jsonify({"feedback": [r.to_dict() for r in rows]})
+
+
+@app.route("/api/feedback", methods=["POST"])
+def api_submit_feedback():
+    if not rate_limit(f"feedback:{client_ip()}", max_hits=3, window_seconds=3600):
+        return jsonify({"error": "Too many submissions. Please try again later."}), 429
+
+    data = request.get_json(silent=True) or {}
+    name = sanitize(data.get("name"), 120)
+    email = sanitize(data.get("email"), 255) or None
+    message = sanitize(data.get("message"), 2000)
+    try:
+        rating = max(1, min(5, int(data.get("rating", 5))))
+    except (TypeError, ValueError):
+        rating = 5
+
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    if not message:
+        return jsonify({"error": "Message is required"}), 400
+
+    fb = Feedback(name=name, email=email, message=message, rating=rating)
+    db.session.add(fb)
+    db.session.commit()
+    return jsonify({"success": True, "id": fb.id}), 201
+
+
 # ─── Auth routes ────────────────────────────────────────────────────────────
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -594,11 +628,10 @@ def api_admin_stats():
         key=lambda x: -x["count"],
     )
 
-    # 6-month trend (walk back one month at a time — `timedelta(days=30)` drifts
-    # and can produce duplicate month labels at boundaries)
+    # 6-month trend
     trend = []
     for i in range(5, -1, -1):
-        m_idx = month_start.month - 1 - i  # 0-indexed months since year 0
+        m_idx = month_start.month - 1 - i
         y = month_start.year + (m_idx // 12)
         m = (m_idx % 12) + 1
         m_start = date(y, m, 1)
@@ -674,15 +707,12 @@ def too_large(_):
 
 @app.errorhandler(404)
 def not_found(_):
-    # For API routes return JSON; for pages redirect to the SPA
     if request.path.startswith("/api/"):
         return jsonify({"error": "Not found"}), 404
     return send_from_directory(STATIC_DIR, "Aadhavan.html")
 
 
 if __name__ == "__main__":
-    # Development only. In production, Gunicorn imports `app` directly
-    # (see Procfile). Debug mode must never run with FLASK_ENV=production.
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_ENV", "").lower() != "production"
     app.run(host="0.0.0.0", port=port, debug=debug)
